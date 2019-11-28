@@ -22,12 +22,6 @@
 ########################################################################
 include(GrPlatform) #define LIB_SUFFIX
 
-include_directories(${Boost_INCLUDE_DIR} ${RapidJson_INCLUDE_DIR})
-link_directories(${Boost_LIBRARY_DIRS})
-
-find_package(UHD REQUIRED)
-include_directories(${UHD_INCLUDE_DIRS})
-
 # Tell boost time to use higher precision
 add_definitions(-DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG)
 
@@ -50,11 +44,11 @@ if(NOT sigmf_sources)
 endif(NOT sigmf_sources)
 
 add_library(gnuradio-sigmf SHARED ${sigmf_sources})
-target_link_libraries(gnuradio-sigmf
-    ${UHD_LIBRARIES}
-    ${Boost_LIBRARIES}
-    ${GNURADIO_ALL_LIBRARIES}
-    )
+target_link_libraries(gnuradio-sigmf gnuradio::gnuradio-runtime gnuradio::gnuradio-uhd gnuradio::gnuradio-blocks)
+target_include_directories(gnuradio-sigmf
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+    PUBLIC $<INSTALL_INTERFACE:include>
+  )
 set_target_properties(gnuradio-sigmf PROPERTIES DEFINE_SYMBOL "gnuradio_sigmf_EXPORTS")
 
 if(APPLE)
@@ -70,32 +64,32 @@ include(GrMiscUtils)
 GR_LIBRARY_FOO(gnuradio-sigmf RUNTIME_COMPONENT "sigmf_runtime" DEVEL_COMPONENT "sigmf_devel")
 
 ########################################################################
-# Build and register unit test
-########################################################################
-include(GrTest)
-
-include_directories(${CPPUNIT_INCLUDE_DIRS})
-
-list(APPEND test_sigmf_sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sigmf.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/qa_sigmf.cc
-)
-
-add_executable(test-sigmf ${test_sigmf_sources})
-
-target_link_libraries(
-  test-sigmf
-  ${GNURADIO_RUNTIME_LIBRARIES}
-  ${Boost_LIBRARIES}
-  ${CPPUNIT_LIBRARIES}
-  gnuradio-sigmf
-)
-
-GR_ADD_TEST(test_sigmf test-sigmf)
-
-########################################################################
 # Print summary
 ########################################################################
 message(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Building for version: ${VERSION} / ${LIBVER}")
 
+########################################################################
+# Build and register unit test
+########################################################################
+include(GrTest)
+
+# If your unit tests require special include paths, add them here
+#include_directories()
+# List all files that contain Boost.UTF unit tests here
+list(APPEND test_sigmf_sources
+)
+
+# Anything we need to link to for the unit tests go here
+list(APPEND GR_TEST_TARGET_DEPS gnuradio-sigmf)
+
+if(NOT test_sigmf_sources)
+    MESSAGE(STATUS "No C++ unit tests... skipping")
+    return()
+endif(NOT test_sigmf_sources)
+
+foreach(qa_file ${test_sigmf_sources})
+    GR_ADD_CPP_TEST("sigmf_${qa_file}"
+        ${CMAKE_CURRENT_SOURCE_DIR}/${qa_file}
+    )
+endforeach(qa_file)

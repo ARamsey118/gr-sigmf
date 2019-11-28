@@ -61,4 +61,4 @@ def _prepare_sigmf_swig():
 
 
 _prepare_sigmf_swig()
-from gr_sigmf_swig import *
+from .gr_sigmf_swig import *
