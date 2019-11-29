@@ -518,18 +518,33 @@ inputs:
 
 templates:
     imports: import gr_sigmf
-    make: "gr_sigmf.sink(\"$type.sigmf_type\", ${filename}, ${time_mode}, ${append})\n\
-        self.${id}.set_global_meta(\"core:sample_rate\", ${samp_rate})\n% if description\
-        \ != \"\":\nself.${id}.set_global_meta(\"core:description\", ${description})\n\
-        % endif\n% if author != \"\":\nself.${id}.set_global_meta(\"core:author\"\
-        , ${author})\n% endif\n% if license != \"\":\nself.${id}.set_global_meta(\"\
-        core:license\", ${license})\n% endif\n% if hardware != \"\":\nself.${id}.set_global_meta(\"\
-        core:hw\", ${hardware})\n% endif\n#for ${i} in range(1, int(${num_extra_fields})\
-        \ + 1)\n<% field_val = getVar('field_' + str() + '_value') %>\n<% field_key\
-        \ = getVar('field_' + str() + '_key') %>\n<% field_type = getVar('field_'\
-        \ + str() + '_type') %>\n% if field_type == 'string':\nself.${id}.set_global_meta('$field_key()',\
-        \ '$field_val()')\n% else:\nself.${id}.set_global_meta('$field_key()', ${field_val()})\n\
-        % endif\n#end for\n  "
+    make: |
+        gr_sigmf.sink("${type.sigmf_type}", ${filename}, ${time_mode}, ${append})
+        self.${id}.set_global_meta("core:sample_rate", ${samp_rate})
+        % if description:
+        self.${id}.set_global_meta("core:description", ${description})
+        % endif
+        % if author:
+        self.${id}.set_global_meta("core:author" , ${author})
+        % endif
+        % if license:
+        self.${id}.set_global_meta("core:license", ${license})
+        % endif
+        % if hardware:
+        self.${id}.set_global_meta("core:hw", ${hardware})
+        % endif
+        % for i in range(1, int(num_extra_fields) + 1):
+        <%
+            field_val = context.get('field_' + str(i) + '_value')
+            field_key = context.get('field_' + str(i) + '_key')
+            field_type = context.get('field_' + str(i) + '_type')
+        %>
+        % if field_type == 'string':
+        self.${id}.set_global_meta(${field_key}, '$field_val')
+        % else:
+        self.${id}.set_global_meta(${field_key}, ${field_val})
+        % endif
+        % endfor
 
 documentation: |-
     Write data to a SigMF recording.

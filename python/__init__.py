@@ -29,7 +29,7 @@ from gnuradio import uhd
 # Prepare gr_sigmf swig module to allow passing a string for device_addr_t.
 def _prepare_sigmf_swig():
     try:
-        import gr_sigmf_swig
+        from . import gr_sigmf_swig
     except ImportError:
         # This path is for running make test without an installed package.
         import os
@@ -49,11 +49,11 @@ def _prepare_sigmf_swig():
         kwargs = dict(kwargs)
         if len(args) > 0:
             args[0] = uhd.device_addr_t(args[0])
-        if kwargs.has_key('uhd_args'):
+        if 'uhd_args' in kwargs:
             kwargs['uhd_args'] = device_addr(kwargs['uhd_args'])
         # Don't pass kwargs, it confuses swig, instead map into args list.
         for key in ('uhd_args', 'poll_interval'):
-            if kwargs.has_key(key):
+            if key in kwargs:
                 args.append(kwargs[key])
         return old_constructor(*args)
 
